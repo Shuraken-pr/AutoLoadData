@@ -78,10 +78,12 @@ begin
     except
       Result := false;
       ErrorMessage := 'Не удалось установить соединение';
+      raise;
     end;
   except
     Result := false;
     ErrorMessage := 'Параметры заданы неверно';
+    raise;
   end;
 end;
 

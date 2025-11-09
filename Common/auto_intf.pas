@@ -164,7 +164,7 @@ begin
   hMod := LoadLibrary(PChar(FileName));
   if hMod = 0 then
   begin
-    MessageDlg(Format('Не удалось загрузить  "%s". Ошибка %d', [FileName, GetLastError]), TMsgDlgType.mtError, [TMsgDlgBtn.mbOK], 0);
+    //MessageDlg(Format('Не удалось загрузить  "%s". Ошибка %d', [FileName, GetLastError]), TMsgDlgType.mtError, [TMsgDlgBtn.mbOK], 0);
     exit;
   end;
 
