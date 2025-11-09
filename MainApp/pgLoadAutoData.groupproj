@@ -1,0 +1,60 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{9FAE7818-ECCC-45B1-AAB3-E8C3B9B1F8F1}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="LoadAutoData.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\XLSLoadAutoDataDLL\XLSLoadAutoDataDLL.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\PGLoadAutoDataDLL\PGLoadAutoDataDLL.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="LoadAutoData">
+        <MSBuild Projects="LoadAutoData.dproj"/>
+    </Target>
+    <Target Name="LoadAutoData:Clean">
+        <MSBuild Projects="LoadAutoData.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="LoadAutoData:Make">
+        <MSBuild Projects="LoadAutoData.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="XLSLoadAutoDataDLL">
+        <MSBuild Projects="..\XLSLoadAutoDataDLL\XLSLoadAutoDataDLL.dproj"/>
+    </Target>
+    <Target Name="XLSLoadAutoDataDLL:Clean">
+        <MSBuild Projects="..\XLSLoadAutoDataDLL\XLSLoadAutoDataDLL.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="XLSLoadAutoDataDLL:Make">
+        <MSBuild Projects="..\XLSLoadAutoDataDLL\XLSLoadAutoDataDLL.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="PGLoadAutoDataDLL">
+        <MSBuild Projects="..\PGLoadAutoDataDLL\PGLoadAutoDataDLL.dproj"/>
+    </Target>
+    <Target Name="PGLoadAutoDataDLL:Clean">
+        <MSBuild Projects="..\PGLoadAutoDataDLL\PGLoadAutoDataDLL.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="PGLoadAutoDataDLL:Make">
+        <MSBuild Projects="..\PGLoadAutoDataDLL\PGLoadAutoDataDLL.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="LoadAutoData;XLSLoadAutoDataDLL;PGLoadAutoDataDLL"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="LoadAutoData:Clean;XLSLoadAutoDataDLL:Clean;PGLoadAutoDataDLL:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="LoadAutoData:Make;XLSLoadAutoDataDLL:Make;PGLoadAutoDataDLL:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
