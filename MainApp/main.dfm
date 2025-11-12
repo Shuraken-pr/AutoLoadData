@@ -51,11 +51,13 @@ object Form1: TForm1
         OptionsView.GroupFooters = gfAlwaysVisible
         object gcAuto: TcxGridColumn
           Caption = #1040#1074#1090#1086
+          PropertiesClassName = 'TcxTextEditProperties'
           Styles.GroupSummary = stGroupSummary
           OnCustomDrawFooterCell = gcAutoCustomDrawFooterCell
         end
         object gcParking: TcxGridColumn
           Caption = #1055#1072#1088#1082#1086#1074#1082#1072
+          PropertiesClassName = 'TcxTextEditProperties'
           Styles.GroupSummary = stGroupSummary
         end
       end

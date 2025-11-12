@@ -13,41 +13,44 @@ uses
   auto_intf in '..\Common\auto_intf.pas'  ;
 
 type
-  TPGLoadAutoData = class(TInterfacedObject, IAutoList, ILoadAutoList)
+  TPGLoadAutoData = class(TInterfacedObject, ILoadAutoList, IPGLoadAutoList)
   private
-    FList: TList<IAuto>;
+    FList: TObjectList<TAuto>;
     FConnection: TFDConnection;
-    FDatabase: string;
+    FDatabase: WideString;
     FPort: integer;
-    FServer: string;
-    FLogin: string;
-    FPassword: string;
-    FSQLText: string;
-    function GetCount: Integer;
-    function GetItem(Index: Integer): IAuto;
-    procedure SetItem(Index: Integer; const Value: IAuto);
-    procedure LoadFromDS(AQry: TFDQuery);
+    FServer: WideString;
+    FLogin: WideString;
+    FPassword: WideString;
+    FSQLText: WideString;
+    procedure LoadFromDS(AQry: TFDQuery); safecall;
+    function GetList: TObjectList<TAuto>; safecall;
+    function GetDatabase: WideString; safecall;
+    function GetLogin: WideString; safecall;
+    function GetPassword: WideString;  safecall;
+    function GetPort: integer; safecall;
+    function GetServer: WideString; safecall;
+    function GetSqlText: WideString; safecall;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Add(const Value: IAuto);
-    procedure Remove(const Value: IAuto);
-    procedure Clear;
-    function CheckLoad(AParams: TArray<string>; out ErrorMessage: string): boolean;
-    function GetDescription: string;
-    procedure LoadData;
+    function CheckLoad(AParams: TArray<string>; out ErrorMessage: WideString): boolean;  safecall;
+    function GetDescription: WideString;  safecall;
+    procedure LoadData;  safecall;
+    property Database: WideString read GetDatabase;
+    property Port: integer read GetPort;
+    property Server: WideString read GetServer;
+    property Login: WideString read GetLogin;
+    property Password: WideString read GetPassword;
+    property SQLText: WideString read GetSqlText;
+    property AutoList: TObjectList<TAuto> read GetList;
   end;
 {$R *.res}
 
 { TXLSLoadAutoData }
 
-procedure TPGLoadAutoData.Add(const Value: IAuto);
-begin
-  fList.Add(Value);
-end;
-
 function TPGLoadAutoData.CheckLoad(AParams: TArray<string>;
-  out ErrorMessage: string): boolean;
+  out ErrorMessage: WideString): boolean;
 begin
   Result := Assigned(FConnection);
   ErrorMessage := '';
@@ -78,23 +81,16 @@ begin
     except
       Result := false;
       ErrorMessage := 'Не удалось установить соединение';
-      raise;
     end;
   except
     Result := false;
     ErrorMessage := 'Параметры заданы неверно';
-    raise;
   end;
-end;
-
-procedure TPGLoadAutoData.Clear;
-begin
-  FList.Clear;
 end;
 
 constructor TPGLoadAutoData.Create;
 begin
-  FList := TList<IAuto>.Create;
+  FList := TObjectList<TAuto>.Create(false);
   FConnection := TFDConnection.Create(nil);
 end;
 
@@ -105,12 +101,12 @@ begin
   inherited;
 end;
 
-function TPGLoadAutoData.GetCount: Integer;
+function TPGLoadAutoData.GetDatabase: WideString;
 begin
-  Result := FList.Count;
+
 end;
 
-function TPGLoadAutoData.GetDescription: string;
+function TPGLoadAutoData.GetDescription: WideString;
 begin
   Result :=
   'Загрузка данных из PostGre'#13#10+
@@ -118,11 +114,34 @@ begin
   'Текст запроса должен содержать поля car, parking, date_from, date_to';
 end;
 
-function TPGLoadAutoData.GetItem(Index: Integer): IAuto;
+function TPGLoadAutoData.GetList: TObjectList<TAuto>;
 begin
-  if (Index < 0) or (Index >= fList.Count) then
-    raise Exception.Create('Индекс вне диапазона');
-  Result := fList[Index];
+  Result := FList;
+end;
+
+function TPGLoadAutoData.GetLogin: WideString;
+begin
+  Result := FLogin;
+end;
+
+function TPGLoadAutoData.GetPassword: WideString;
+begin
+  Result := FPassword;
+end;
+
+function TPGLoadAutoData.GetPort: integer;
+begin
+  Result := FPort;
+end;
+
+function TPGLoadAutoData.GetServer: WideString;
+begin
+  Result := FServer;
+end;
+
+function TPGLoadAutoData.GetSqlText: WideString;
+begin
+  Result := FSQLText;
 end;
 
 procedure TPGLoadAutoData.LoadData;
@@ -160,13 +179,13 @@ end;
 
 procedure TPGLoadAutoData.LoadFromDS(AQry: TFDQuery);
 var
-  NewAuto: IAuto;
-  car, parking: string;
+  NewAuto: TAuto;
+  car, parking: WideString;
   date_from, date_to: TDateTime;
 begin
   try
-    car := AQry.FieldByName('car').AsString;
-    parking := AQry.FieldByName('parking').AsString;
+    car := AQry.FieldByName('car').AsWideString;
+    parking := AQry.FieldByName('parking').AsWideString;
     date_from := AQry.FieldByName('date_from').AsDateTime;
     date_to := AQry.FieldByName('date_from').AsDateTime;
   except
@@ -174,25 +193,16 @@ begin
   end;
 
   NewAuto := TAuto.Create;
-
-  NewAuto.Car := car;
-  NewAuto.Parking := parking;
-  NewAuto.DateFrom := date_from;
-  NewAuto.DateTo := date_to;
-  // Добавление в список
-  Add(NewAuto);
-end;
-
-procedure TPGLoadAutoData.Remove(const Value: IAuto);
-begin
-  FList.Remove(Value);
-end;
-
-procedure TPGLoadAutoData.SetItem(Index: Integer; const Value: IAuto);
-begin
-  if (Index < 0) or (Index >= fList.Count) then
-    raise Exception.Create('Индекс вне диапазона');
-  fList[Index] := Value;
+  try
+    NewAuto.Car := car;
+    NewAuto.Parking := parking;
+    NewAuto.DateFrom := date_from;
+    NewAuto.DateTo := date_to;
+    // Добавление в список
+    FList.Add(NewAuto);
+  except
+    FreeAndNil(NewAuto)
+  end;
 end;
 
 function LoadAutoList: ILoadAutoList;

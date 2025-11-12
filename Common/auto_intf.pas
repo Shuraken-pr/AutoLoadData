@@ -14,64 +14,78 @@ uses
 type
   IAuto = interface
     ['{7B6480FC-2751-4799-8D6C-B73975560708}']
-    function GetCar: string;
-    procedure SetCar(const Value: string);
-    function GetParking: string;
-    procedure SetParking(const Value: string);
-    function GetDateFrom: TDateTime;
-    procedure SetDateFrom(const Value: TDateTime);
-    function GetDateTo: TDateTime;
-    procedure SetDateTo(const Value: TDateTime);
+    function GetCar: WideString; safecall;
+    procedure SetCar(const Value: WideString); safecall;
+    function GetParking: WideString; safecall;
+    procedure SetParking(const Value: WideString); safecall;
+    function GetDateFrom: TDateTime; safecall;
+    procedure SetDateFrom(const Value: TDateTime); safecall;
+    function GetDateTo: TDateTime; safecall;
+    procedure SetDateTo(const Value: TDateTime); safecall;
 
-    property Car: string read GetCar write SetCar;
-    property Parking: string read GetParking write SetParking;
+    property Car: WideString read GetCar write SetCar;
+    property Parking: WideString read GetParking write SetParking;
     property DateFrom: TDateTime read GetDateFrom write SetDateFrom;
     property DateTo: TDateTime read GetDateTo write SetDateTo;
-  end;
-
-  //интерфейс для хранения данных.
-  IAutoList = interface
-   ['{44246D4F-B98A-43C9-8E36-D459356BC18B}']
-    function GetCount: Integer;
-    function GetItem(Index: Integer): IAuto;
-    procedure SetItem(Index: Integer; const Value: IAuto);
-    procedure Add(const Value: IAuto);
-    procedure Remove(const Value: IAuto);
-    procedure Clear;
-
-    property Count: Integer read GetCount;
-    property Items[Index: Integer]: IAuto read GetItem write SetItem; default;
-  end;
-
-  //интерфейс для загрузки данных
-  ILoadAutoList = interface(IAutoList)
-    ['{EC01835B-4F59-43A1-BBA3-6C50AABAD1E2}']
-    //функция проверяет, возможна ли загрузка с указанными параметрами.
-    //Для загрузки из xls-файла требуется наличие офиса на компьютере и файл, из которого будут загружаться данные.
-    //Для загрузки из PostGre требуются параметры подключения и запрос, который вернёт нужные данные.
-    function CheckLoad(AParams: TArray<string>; out ErrorMessage: string): boolean;
-    //В описании будут указаны необходимые параметры
-    function GetDescription: string;
-    //сама загрузка данных.
-    procedure LoadData;
   end;
 
   //базовый класс для загрузки. Для расширения функциональности наследоваться от него
   TAuto = class(TInterfacedObject, IAuto)
   private
-    fCar: string;
-    fParking: string;
+    fCar: WideString;
+    fParking: WideString;
     fDateFrom: TDateTime;
     fDateTo: TDateTime;
+    function GetCar: WideString;  safecall;
+    procedure SetCar(const Value: WideString); safecall;
+    function GetParking: WideString; safecall;
+    procedure SetParking(const Value: WideString); safecall;
+    function GetDateFrom: TDateTime;  safecall;
+    procedure SetDateFrom(const Value: TDateTime); safecall;
+    function GetDateTo: TDateTime;  safecall;
+    procedure SetDateTo(const Value: TDateTime);  safecall;
   public
-    function GetCar: string;
-    procedure SetCar(const Value: string);
-    function GetParking: string;
-    procedure SetParking(const Value: string);
-    function GetDateFrom: TDateTime;
-    procedure SetDateFrom(const Value: TDateTime);
-    function GetDateTo: TDateTime;
-    procedure SetDateTo(const Value: TDateTime);
+    property Car: WideString read GetCar write SetCar;
+    property Parking: WideString read GetParking write SetParking;
+    property DateFrom: TDateTime read GetDateFrom write SetDateFrom;
+    property DateTo: TDateTime read GetDateTo write SetDateTo;
+  end;
+
+  //интерфейс для загрузки данных
+  ILoadAutoList = interface
+    ['{EC01835B-4F59-43A1-BBA3-6C50AABAD1E2}']
+    //функция проверяет, возможна ли загрузка с указанными параметрами.
+    //Для загрузки из xls-файла требуется наличие офиса на компьютере и файл, из которого будут загружаться данные.
+    //Для загрузки из PostGre требуются параметры подключения и запрос, который вернёт нужные данные.
+    function CheckLoad(AParams: TArray<string>; out ErrorMessage: WideString): boolean;  safecall;
+    //В описании будут указаны необходимые параметры
+    function GetDescription: WideString;  safecall;
+    //сама загрузка данных.
+    procedure LoadData; safecall;
+    function GetList: TObjectList<TAuto>; safecall;
+    property AutoList: TObjectList<TAuto> read GetList;
+  end;
+
+  IXLSLoadAutoList = interface(ILoadAutoList)
+    ['{BA704998-6F71-417B-8969-436FCD08D5EC}']
+    function GetFileName: WideString; safecall;
+    property FileName: WideString read GetFileName;
+  end;
+
+  IPGLoadAutoList = interface(ILoadAutoList)
+    ['{071A3D19-41F3-4ED2-A14E-7524D83900A1}']
+    function GetDatabase: WideString; safecall;
+    function GetLogin: WideString; safecall;
+    function GetPassword: WideString;  safecall;
+    function GetPort: integer; safecall;
+    function GetServer: WideString; safecall;
+    function GetSqlText: WideString; safecall;
+    property Database: WideString read GetDatabase;
+    property Port: integer read GetPort;
+    property Server: WideString read GetServer;
+    property Login: WideString read GetLogin;
+    property Password: WideString read GetPassword;
+    property SQLText: WideString read GetSqlText;
   end;
 
   //Реализацию интерфейсов вынесем в dll. Класс будет отвечать за корректную работу с dll.
@@ -271,7 +285,7 @@ end;
 
 { TAuto }
 
-function TAuto.GetCar: string;
+function TAuto.GetCar: WideString;
 begin
   Result := fCar;
 end;
@@ -286,12 +300,12 @@ begin
   Result := fDateTo;
 end;
 
-function TAuto.GetParking: string;
+function TAuto.GetParking: WideString;
 begin
   Result := fParking;
 end;
 
-procedure TAuto.SetCar(const Value: string);
+procedure TAuto.SetCar(const Value: WideString);
 begin
   fCar := Value;
 end;
@@ -306,7 +320,7 @@ begin
   FDateTo := Value;
 end;
 
-procedure TAuto.SetParking(const Value: string);
+procedure TAuto.SetParking(const Value: WideString);
 begin
   fParking := Value;
 end;

@@ -67,9 +67,9 @@ type
     FCarParkingList: TStringList;
     FDateList: TList<TDate>;
     FDllManager: TDllManager<ILoadAutoList>;
-    FXLSLoadAutoDataDLL: ILoadAutoList;
-    FPGLoadAutoDataDLL: ILoadAutoList;
-    procedure FillGrid(AutoList: ILoadAutoList);
+    FXLSLoadAutoDataDLL: IXLSLoadAutoList;
+    FPGLoadAutoDataDLL: IPGLoadAutoList;
+    procedure FillGrid(AutoList: TObjectList<TAuto>);
   public
     { Public declarations }
   end;
@@ -90,7 +90,7 @@ end;
 
 procedure TForm1.btnPGLoadDataClick(Sender: TObject);
 var
-  server, port, db_name, login, password, SQLText, ErrMsg: string;
+  server, port, db_name, login, password, SQLText, ErrMsg: WideString;
 begin
   ErrMsg := '';
   server := edServer.Text;
@@ -108,15 +108,18 @@ begin
      ShowMessage('Необходимо заполнить все параметры')
   else begin
     if FPGLoadAutoDataDLL.CheckLoad([server, port, db_name, login, password, sqlText], ErrMsg) then
-      FillGrid(FPGLoadAutoDataDLL)
-    else
+    begin
+      FPGLoadAutoDataDLL.LoadData;
+      FillGrid(FPGLoadAutoDataDLL.AutoList)
+    end
+      else
       ShowMessage(errMsg);
   end;
 end;
 
 procedure TForm1.btnXLSLoadDataClick(Sender: TObject);
 var
-  FXLSFileName, ErrMsg: string;
+  FXLSFileName, ErrMsg: WideString;
 begin
   FXLSFileName := beXLSPath.Text;
   ErrMsg := '';
@@ -126,7 +129,8 @@ begin
     begin
       if FXLSLoadAutoDataDLL.CheckLoad([FXLSFileName], ErrMsg) then
       begin
-        FillGrid(FXLSLoadAutoDataDLL);
+        FXLSLoadAutoDataDLL.LoadData;
+        FillGrid(FXLSLoadAutoDataDLL.AutoList);
       end
         else
         ShowMessage(ErrMsg);
@@ -138,10 +142,10 @@ begin
     ShowMessage('Укажите путь к файлу загрузки');
 end;
 
-procedure TForm1.FillGrid(AutoList: ILoadAutoList);
+procedure TForm1.FillGrid(AutoList: TObjectList<TAuto>);
 var
   i, curValue: integer;
-  car, parking: string;
+  car, parking: WideString;
   date_from: TDate;
   gcDate: TcxGridColumn;
   rowIndex, colIndex: integer;
@@ -157,7 +161,6 @@ begin
           tvAutoData.Columns[i].Free;
       end;
 
-      AutoList.LoadData;
       //очищаем список для записей
       FCarParkingList.Clear;
       //очищаем список для колонок
@@ -213,11 +216,9 @@ begin
       //заполним записи.
       for i := 0 to AutoList.Count - 1 do
       begin
-        car := AutoList[i].Car;
-        parking := AutoList[i].Parking;
         date_from := Trunc(AutoList[i].DateFrom);
         colIndex := FDateList.IndexOf(date_from);
-        RowIndex := FCarParkingList.IndexOf(car + ';' + parking);
+        RowIndex := FCarParkingList.IndexOf(AutoList[i].Car + ';' + AutoList[i].parking);
         if (colIndex >= 0) and (RowIndex >= 0) then
         begin
           if VarIsNull(Values[RowIndex, 2 + colIndex]) then
@@ -225,8 +226,8 @@ begin
           else
             curValue := Values[RowIndex, 2 + colIndex];
           Values[RowIndex, 2 + colIndex] := curValue + 1;
-          Values[RowIndex, gcAuto.Index] := car;
-          Values[RowIndex, gcParking.Index] := parking;
+          Values[RowIndex, gcAuto.Index] := AutoList[i].Car;
+          Values[RowIndex, gcParking.Index] := AutoList[i].parking;
         end;
       end;
     finally
@@ -242,13 +243,13 @@ begin
   FDllManager := TDllManager<ILoadAutoList>.Create;
   if FDllManager.Load('XLSLoadAutoDataDLL', 'XLSLoadAutoDataDLL.dll', ILoadAutoList) then
   begin
-    FDllManager.GetProvider('XLSLoadAutoDataDLL', FXLSLoadAutoDataDLL);
+    FDllManager.GetProvider('XLSLoadAutoDataDLL', ILoadAutoList(FXLSLoadAutoDataDLL));
     mXLSDescription.Lines.Text := FXLSLoadAutoDataDLL.GetDescription;
     lgExcelParams.Visible := true;
   end;
   if FDllManager.Load('PGLoadAutoDataDLL', 'PGLoadAutoDataDLL.dll', ILoadAutoList) then
   begin
-    FDllManager.GetProvider('PGLoadAutoDataDLL', FPGLoadAutoDataDLL);
+    FDllManager.GetProvider('PGLoadAutoDataDLL', ILoadAutoList(FPGLoadAutoDataDLL));
     mPGDescription.Lines.Text := FPGLoadAutoDataDLL.GetDescription;
     lgPostgreParams.Visible := true;
   end;
@@ -262,6 +263,7 @@ begin
     FXLSLoadAutoDataDLL := nil;
   if Assigned(FPGLoadAutoDataDLL) then
     FPGLoadAutoDataDLL := nil;
+  FreeAndNil(FDllManager);
 end;
 
 procedure TForm1.gcAutoCustomDrawFooterCell(Sender: TcxGridTableView;

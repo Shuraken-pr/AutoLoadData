@@ -11,23 +11,21 @@ uses
   System.Generics.Collections;
 
 type
-  TXLSLoadAutoData = class(TInterfacedObject, IAutoList, ILoadAutoList)
+  TXLSLoadAutoData = class(TInterfacedObject, ILoadAutoList, IXLSLoadAutoList)
   private
-    FList: TList<IAuto>;
+    FList: TObjectList<TAuto>;
     FIsExcelInstalled: boolean;
-    FFileName: string;
-    function GetCount: Integer;
-    function GetItem(Index: Integer): IAuto;
-    procedure SetItem(Index: Integer; const Value: IAuto);
+    FFileName: WideString;
+    function GetList: TObjectList<TAuto>; safecall;
+    function GetFileName: WideString; safecall;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Add(const Value: IAuto);
-    procedure Remove(const Value: IAuto);
-    procedure Clear;
-    function CheckLoad(AParams: TArray<string>; out ErrorMessage: string): boolean;
-    function GetDescription: string;
-    procedure LoadData;
+    function CheckLoad(AParams: TArray<string>; out ErrorMessage: WideString): boolean;  safecall;
+    function GetDescription: WideString; safecall;
+    procedure LoadData; safecall;
+    property FileName: WideString read GetFileName;
+    property AutoList: TObjectList<TAuto> read GetList;
   end;
 
 {$R *.res}
@@ -52,12 +50,7 @@ begin
   CoUninitialize;
 end;
 
-procedure TXLSLoadAutoData.Add(const Value: IAuto);
-begin
-  fList.Add(Value);
-end;
-
-function TXLSLoadAutoData.CheckLoad(AParams: TArray<string>; out ErrorMessage: string): boolean;
+function TXLSLoadAutoData.CheckLoad(AParams: TArray<string>; out ErrorMessage: WideString): boolean;
 begin
   Result := FIsExcelInstalled;
   ErrorMessage := '';
@@ -76,14 +69,9 @@ begin
   end;
 end;
 
-procedure TXLSLoadAutoData.Clear;
-begin
-  FList.Clear;
-end;
-
 constructor TXLSLoadAutoData.Create;
 begin
-  FList := TList<IAuto>.Create;
+  FList := TObjectList<TAuto>.Create(false);
   FIsExcelInstalled := IsExcelInstalled;
 end;
 
@@ -93,12 +81,7 @@ begin
   inherited;
 end;
 
-function TXLSLoadAutoData.GetCount: Integer;
-begin
-  Result := FList.Count;
-end;
-
-function TXLSLoadAutoData.GetDescription: string;
+function TXLSLoadAutoData.GetDescription: WideString;
 begin
   Result := 'Загрузка данных из Excel-файла.'#13#10;
   if not FIsExcelInstalled then
@@ -110,26 +93,22 @@ begin
    'Убедитесь, что первая страница файла содержит именно эти данные';
 end;
 
-function TXLSLoadAutoData.GetItem(Index: Integer): IAuto;
+function TXLSLoadAutoData.GetFileName: WideString;
 begin
-  if (Index < 0) or (Index >= fList.Count) then
-    raise Exception.Create('Индекс вне диапазона');
-  Result := fList[Index];
+  Result := FFileName;
 end;
 
-procedure TXLSLoadAutoData.SetItem(Index: Integer; const Value: IAuto);
+function TXLSLoadAutoData.GetList: TObjectList<TAuto>;
 begin
-  if (Index < 0) or (Index >= fList.Count) then
-    raise Exception.Create('Индекс вне диапазона');
-  fList[Index] := Value;
+  Result := FList;
 end;
 
 procedure TXLSLoadAutoData.LoadData;
 var
   ExcelApp, Workbook, Worksheet: Variant;
   Row, RowCount: Integer;
-  NewAuto: IAuto;
-  CarValue, ParkingValue: string;
+  NewAuto: TAuto;
+  CarValue, ParkingValue: WideString;
   DateFromValue, DateToValue: TDateTime;
   DateFromVar, DateToVar: Variant;
 begin
@@ -180,13 +159,16 @@ begin
           begin
             // Создание объекта IAuto
             NewAuto := TAuto.Create;
-
-            NewAuto.Car := VarToStr(CarValue);
-            NewAuto.Parking := VarToStr(ParkingValue);
-            NewAuto.DateFrom := DateFromValue;
-            NewAuto.DateTo := DateToValue;
-            // Добавление в список
-            Add(NewAuto);
+            try
+              NewAuto.Car := VarToStr(CarValue);
+              NewAuto.Parking := VarToStr(ParkingValue);
+              NewAuto.DateFrom := DateFromValue;
+              NewAuto.DateTo := DateToValue;
+              // Добавление в список
+              FList.Add(NewAuto);
+            except
+              FreeAndNil(NewAuto);
+            end;
           end;
         end;
       finally
@@ -213,12 +195,6 @@ begin
     end;
   end;
 end;
-
-procedure TXLSLoadAutoData.Remove(const Value: IAuto);
-begin
-  FList.Remove(Value);
-end;
-
 
 function LoadAutoList: ILoadAutoList;
 begin
