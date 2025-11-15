@@ -59,17 +59,18 @@ type
     //Для загрузки из PostGre требуются параметры подключения и запрос, который вернёт нужные данные.
     function CheckLoad(AParams: TArray<string>; out ErrorMessage: WideString): boolean;  safecall;
     //В описании будут указаны необходимые параметры
-    function GetDescription: WideString;  safecall;
+    function GetDescription: WideString; safecall;
     //сама загрузка данных.
     procedure LoadData; safecall;
-    function GetList: TObjectList<TAuto>; safecall;
-    property AutoList: TObjectList<TAuto> read GetList;
+    function GetList: TList<IAuto>; safecall;
+    property AutoList: TList<IAuto> read GetList;
   end;
 
   IXLSLoadAutoList = interface(ILoadAutoList)
     ['{BA704998-6F71-417B-8969-436FCD08D5EC}']
     function GetFileName: WideString; safecall;
-    property FileName: WideString read GetFileName;
+    procedure SetFileName(const Value: WideString); safecall;
+    property FileName: WideString read GetFileName write SetFileName;
   end;
 
   IPGLoadAutoList = interface(ILoadAutoList)
@@ -80,12 +81,19 @@ type
     function GetPort: integer; safecall;
     function GetServer: WideString; safecall;
     function GetSqlText: WideString; safecall;
-    property Database: WideString read GetDatabase;
-    property Port: integer read GetPort;
-    property Server: WideString read GetServer;
-    property Login: WideString read GetLogin;
-    property Password: WideString read GetPassword;
-    property SQLText: WideString read GetSqlText;
+    procedure SetDatabase(const Value: WideString); safecall;
+    procedure SetLogin(const Value: WideString); safecall;
+    procedure SetPassword(const Value: WideString); safecall;
+    procedure SetPort(const Value: integer); safecall;
+    procedure SetServer(const Value: WideString); safecall;
+    procedure SetSqlText(const Value: WideString); safecall;
+
+    property Database: WideString read GetDatabase write SetDatabase;
+    property Port: integer read GetPort write SetPort;
+    property Server: WideString read GetServer write SetServer;
+    property Login: WideString read GetLogin write SetLogin;
+    property Password: WideString read GetPassword write SetPassword;
+    property SQLText: WideString read GetSqlText write SetSqlText;
   end;
 
   //Реализацию интерфейсов вынесем в dll. Класс будет отвечать за корректную работу с dll.
@@ -102,7 +110,7 @@ type
     function Load(const Key, FileName: string; GUID: TGUID): Boolean;
 
     // Получить интерфейс по ключу
-    function GetProvider(const Key: string; out Provider: T): Boolean;
+    function GetProvider(const Key: string; out Provider): Boolean;
 
     // Выгрузить DLL по ключу (освобождает интерфейс и FreeLibrary)
     function Unload(const Key: string): Boolean;
@@ -137,10 +145,13 @@ begin
   inherited;
 end;
 
-function TDllManager<T>.GetProvider(const Key: string;
-  out Provider: T): Boolean;
+function TDllManager<T>.GetProvider(const Key: string; out Provider): Boolean;
 begin
-  Result := FProviders.TryGetValue(Key, Provider);
+  try
+    Result := FProviders.TryGetValue(Key, Provider);
+  except
+    Result := false;
+  end;
 end;
 
 function TDllManager<T>.IsLoaded(const Key: string): Boolean;
@@ -183,7 +194,7 @@ begin
   end;
 
   try
-    // Ищем экспортированную функцию CreateTaskProvider
+    // Ищем экспортированную функцию LoadAutoList
     funcPtr := GetProcAddress(hMod, 'LoadAutoList');
     if not Assigned(funcPtr) then
     begin

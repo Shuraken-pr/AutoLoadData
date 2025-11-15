@@ -13,19 +13,20 @@ uses
 type
   TXLSLoadAutoData = class(TInterfacedObject, ILoadAutoList, IXLSLoadAutoList)
   private
-    FList: TObjectList<TAuto>;
+    FList: TList<IAuto>;
     FIsExcelInstalled: boolean;
     FFileName: WideString;
-    function GetList: TObjectList<TAuto>; safecall;
+    function GetList: TList<IAuto>; safecall;
     function GetFileName: WideString; safecall;
+    procedure SetFileName(const Value: WideString); safecall;
   public
     constructor Create;
     destructor Destroy; override;
     function CheckLoad(AParams: TArray<string>; out ErrorMessage: WideString): boolean;  safecall;
     function GetDescription: WideString; safecall;
     procedure LoadData; safecall;
-    property FileName: WideString read GetFileName;
-    property AutoList: TObjectList<TAuto> read GetList;
+    property FileName: WideString read GetFileName write SetFileName;
+    property AutoList: TList<IAuto> read GetList;
   end;
 
 {$R *.res}
@@ -71,7 +72,7 @@ end;
 
 constructor TXLSLoadAutoData.Create;
 begin
-  FList := TObjectList<TAuto>.Create(false);
+  FList := TList<IAuto>.Create;
   FIsExcelInstalled := IsExcelInstalled;
 end;
 
@@ -98,7 +99,7 @@ begin
   Result := FFileName;
 end;
 
-function TXLSLoadAutoData.GetList: TObjectList<TAuto>;
+function TXLSLoadAutoData.GetList: TList<IAuto>;
 begin
   Result := FList;
 end;
@@ -107,7 +108,7 @@ procedure TXLSLoadAutoData.LoadData;
 var
   ExcelApp, Workbook, Worksheet: Variant;
   Row, RowCount: Integer;
-  NewAuto: TAuto;
+  NewAuto: IAuto;
   CarValue, ParkingValue: WideString;
   DateFromValue, DateToValue: TDateTime;
   DateFromVar, DateToVar: Variant;
@@ -167,7 +168,7 @@ begin
               // Добавление в список
               FList.Add(NewAuto);
             except
-              FreeAndNil(NewAuto);
+              NewAuto := nil;
             end;
           end;
         end;
@@ -194,6 +195,11 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TXLSLoadAutoData.SetFileName(const Value: WideString);
+begin
+  FFileName := Value;
 end;
 
 function LoadAutoList: ILoadAutoList;

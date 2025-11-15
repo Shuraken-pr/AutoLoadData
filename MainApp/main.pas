@@ -69,7 +69,7 @@ type
     FDllManager: TDllManager<ILoadAutoList>;
     FXLSLoadAutoDataDLL: IXLSLoadAutoList;
     FPGLoadAutoDataDLL: IPGLoadAutoList;
-    procedure FillGrid(AutoList: TObjectList<TAuto>);
+    procedure FillGrid(AutoList: TList<IAuto>);
   public
     { Public declarations }
   end;
@@ -142,7 +142,7 @@ begin
     ShowMessage('”кажите путь к файлу загрузки');
 end;
 
-procedure TForm1.FillGrid(AutoList: TObjectList<TAuto>);
+procedure TForm1.FillGrid(AutoList: TList<IAuto>);
 var
   i, curValue: integer;
   car, parking: WideString;
@@ -241,17 +241,21 @@ begin
   FCarParkingList := TStringList.Create;
   FDateList := TList<TDate>.Create;
   FDllManager := TDllManager<ILoadAutoList>.Create;
-  if FDllManager.Load('XLSLoadAutoDataDLL', 'XLSLoadAutoDataDLL.dll', ILoadAutoList) then
+  if FDllManager.Load('XLSLoadAutoDataDLL', 'XLSLoadAutoDataDLL.dll', IXLSLoadAutoList) then
   begin
-    FDllManager.GetProvider('XLSLoadAutoDataDLL', ILoadAutoList(FXLSLoadAutoDataDLL));
-    mXLSDescription.Lines.Text := FXLSLoadAutoDataDLL.GetDescription;
-    lgExcelParams.Visible := true;
+    if FDllManager.GetProvider('XLSLoadAutoDataDLL', FXLSLoadAutoDataDLL) then
+    begin
+      mXLSDescription.Lines.Text := FXLSLoadAutoDataDLL.GetDescription;
+      lgExcelParams.Visible := true;
+    end;
   end;
-  if FDllManager.Load('PGLoadAutoDataDLL', 'PGLoadAutoDataDLL.dll', ILoadAutoList) then
+  if FDllManager.Load('PGLoadAutoDataDLL', 'PGLoadAutoDataDLL.dll', IPGLoadAutoList) then
   begin
-    FDllManager.GetProvider('PGLoadAutoDataDLL', ILoadAutoList(FPGLoadAutoDataDLL));
-    mPGDescription.Lines.Text := FPGLoadAutoDataDLL.GetDescription;
-    lgPostgreParams.Visible := true;
+    if FDllManager.GetProvider('PGLoadAutoDataDLL', FPGLoadAutoDataDLL) then
+    begin
+      mPGDescription.Lines.Text := FPGLoadAutoDataDLL.GetDescription;
+      lgPostgreParams.Visible := true;
+    end;
   end;
 end;
 

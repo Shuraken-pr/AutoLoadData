@@ -15,7 +15,7 @@ uses
 type
   TPGLoadAutoData = class(TInterfacedObject, ILoadAutoList, IPGLoadAutoList)
   private
-    FList: TObjectList<TAuto>;
+    FList: TList<IAuto>;
     FConnection: TFDConnection;
     FDatabase: WideString;
     FPort: integer;
@@ -24,26 +24,32 @@ type
     FPassword: WideString;
     FSQLText: WideString;
     procedure LoadFromDS(AQry: TFDQuery); safecall;
-    function GetList: TObjectList<TAuto>; safecall;
+    function GetList: TList<IAuto>; safecall;
     function GetDatabase: WideString; safecall;
     function GetLogin: WideString; safecall;
     function GetPassword: WideString;  safecall;
     function GetPort: integer; safecall;
     function GetServer: WideString; safecall;
     function GetSqlText: WideString; safecall;
+    procedure SetDatabase(const Value: WideString); safecall;
+    procedure SetLogin(const Value: WideString); safecall;
+    procedure SetPassword(const Value: WideString); safecall;
+    procedure SetPort(const Value: integer); safecall;
+    procedure SetServer(const Value: WideString); safecall;
+    procedure SetSqlText(const Value: WideString); safecall;
   public
     constructor Create;
     destructor Destroy; override;
     function CheckLoad(AParams: TArray<string>; out ErrorMessage: WideString): boolean;  safecall;
     function GetDescription: WideString;  safecall;
     procedure LoadData;  safecall;
-    property Database: WideString read GetDatabase;
-    property Port: integer read GetPort;
-    property Server: WideString read GetServer;
-    property Login: WideString read GetLogin;
-    property Password: WideString read GetPassword;
-    property SQLText: WideString read GetSqlText;
-    property AutoList: TObjectList<TAuto> read GetList;
+    property Database: WideString read GetDatabase write SetDatabase;
+    property Port: integer read GetPort write SetPort;
+    property Server: WideString read GetServer write SetServer;
+    property Login: WideString read GetLogin write SetLogin;
+    property Password: WideString read GetPassword write SetPassword;
+    property SQLText: WideString read GetSqlText write SetSqlText;
+    property AutoList: TList<IAuto> read GetList;
   end;
 {$R *.res}
 
@@ -90,7 +96,7 @@ end;
 
 constructor TPGLoadAutoData.Create;
 begin
-  FList := TObjectList<TAuto>.Create(false);
+  FList := TList<IAuto>.Create;
   FConnection := TFDConnection.Create(nil);
 end;
 
@@ -114,7 +120,7 @@ begin
   'Текст запроса должен содержать поля car, parking, date_from, date_to';
 end;
 
-function TPGLoadAutoData.GetList: TObjectList<TAuto>;
+function TPGLoadAutoData.GetList: TList<IAuto>;
 begin
   Result := FList;
 end;
@@ -179,7 +185,7 @@ end;
 
 procedure TPGLoadAutoData.LoadFromDS(AQry: TFDQuery);
 var
-  NewAuto: TAuto;
+  NewAuto: IAuto;
   car, parking: WideString;
   date_from, date_to: TDateTime;
 begin
@@ -201,8 +207,38 @@ begin
     // Добавление в список
     FList.Add(NewAuto);
   except
-    FreeAndNil(NewAuto)
+    NewAuto := nil;
   end;
+end;
+
+procedure TPGLoadAutoData.SetDatabase(const Value: WideString);
+begin
+  FDatabase := Value
+end;
+
+procedure TPGLoadAutoData.SetLogin(const Value: WideString);
+begin
+  FLogin := Value;
+end;
+
+procedure TPGLoadAutoData.SetPassword(const Value: WideString);
+begin
+  FPassword := Value;
+end;
+
+procedure TPGLoadAutoData.SetPort(const Value: integer);
+begin
+  FPort := Value;
+end;
+
+procedure TPGLoadAutoData.SetServer(const Value: WideString);
+begin
+  FServer := Value;
+end;
+
+procedure TPGLoadAutoData.SetSqlText(const Value: WideString);
+begin
+  FSQLText := Value;
 end;
 
 function LoadAutoList: ILoadAutoList;
